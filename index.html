@@ -1,296 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Z-Score Calculator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Z-Score Calculator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
 
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    .container:hover { transform: translateY(-5px); }
 
-        .container:hover {
-            transform: translateY(-5px);
-        }
+    .title {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2.15rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: .2px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 14px;
+      font-size: 1rem;
+    }
 
-        .title {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
+    /* Input row keeps things compact (above the fold) */
+    .input-group { margin: 8px 0 14px; text-align: left; }
+    label {
+      display: block; margin-bottom: 8px; font-weight: 700; color: #333; font-size: 1rem;
+    }
+    .input-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+    }
+    input {
+      width: 100%; padding: 16px 18px;
+      border: 2px solid #e1e5e9; border-radius: 14px; font-size: 1.15rem;
+      transition: all 0.2s ease; background: #fff;
+    }
+    input:focus {
+      outline: none; border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+      transform: scale(1.01);
+    }
+    .calculate-btn {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: #fff; border: none; padding: 16px 22px; border-radius: 14px;
+      font-size: 1.1rem; font-weight: 700; cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+      white-space: nowrap;
+    }
+    .calculate-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 25px rgba(102,126,234,0.4); }
+    .calculate-btn:active { transform: translateY(0); }
+    @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+    .pulse { animation: pulse 0.6s ease-in-out; }
 
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1rem;
-        }
+    /* Canvas panel (mini bell-curve) */
+    .curve-wrap {
+      margin: 8px 0 10px;
+      background: #fff;
+      border: 1px solid #eef2ff;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: inset 0 1px 0 #fff, 0 2px 10px rgba(16,24,40,0.06);
+    }
+    .curve-title {
+      font-size: 0.9rem; color: #475569; margin-bottom: 6px; font-weight: 600;
+    }
+    canvas { width: 100%; height: 150px; display: block; }
 
-        .input-group {
-            margin-bottom: 30px;
-        }
+    .result {
+      margin-top: 12px;
+      padding: 18px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-radius: 15px;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.35s ease;
+    }
+    .result.show { opacity: 1; transform: translateY(0); }
+    .error { background: linear-gradient(135deg, #ff7b7b 0%, #ff416c 100%); }
+    .probability-value {
+      font-size: 1.6rem; font-weight: 800; margin: 6px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .explanation { margin-top: 8px; font-size: .95rem; opacity: .95; }
 
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #333;
-            font-size: 1.1rem;
-        }
+    .range-info {
+      margin-top: 10px; padding: 10px;
+      background: rgba(102,126,234,0.1); border-radius: 10px; color: #555; font-size: 0.9rem;
+    }
 
-        input {
-            width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            background: #fff;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: scale(1.02);
-        }
-
-        .calculate-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .calculate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        .calculate-btn:active {
-            transform: translateY(0);
-        }
-
-        .result {
-            margin-top: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 15px;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 600;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
-        }
-
-        .result.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .error {
-            background: linear-gradient(135deg, #ff7b7b 0%, #ff416c 100%);
-        }
-
-        .probability-value {
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 10px 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .explanation {
-            margin-top: 15px;
-            font-size: 0.95rem;
-            opacity: 0.9;
-        }
-
-        .range-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
-            color: #555;
-            font-size: 0.9rem;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .pulse {
-            animation: pulse 0.6s ease-in-out;
-        }
-    </style>
+    /* Mobile polish: keep above the fold & bigger tap targets */
+    @media (max-width: 480px) {
+      .container { padding: 18px; border-radius: 16px; }
+      .title { font-size: 1.8rem; }
+      .subtitle { font-size: .95rem; margin-bottom: 10px; }
+      label { font-size: 1rem; margin-bottom: 6px; }
+      input { padding: 16px; font-size: 1.2rem; }
+      .calculate-btn { padding: 16px 18px; font-size: 1.1rem; }
+      canvas { height: 120px; }
+      .result { font-size: 1rem; padding: 14px; }
+      .probability-value { font-size: 1.4rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="title">Z-Score Calculator</h1>
-        <p class="subtitle">Find probabilities in the standard normal distribution</p>
-        
-        <div class="input-group">
-            <label for="zscore">Enter Z-Score:</label>
-            <input type="number" id="zscore" step="0.1" placeholder="e.g., 1.96, -2.33, 0.5" />
-        </div>
-        
-        <button class="calculate-btn" onclick="calculateProbability()">Calculate Probability</button>
-        
-        <div id="result" class="result"></div>
-        
-        <div class="range-info">
-            <strong>Valid Range:</strong> Z-scores from -3.4 to 3.4<br>
-            Values outside this range will be approximated
-        </div>
+  <div class="container">
+    <h1 class="title">Z-Score Calculator</h1>
+    <p class="subtitle">Find probabilities in the standard normal distribution</p>
+
+    <div class="input-group">
+      <label for="zscore">Enter Z-Score:</label>
+      <div class="input-row">
+        <input type="number" id="zscore" step="0.1" inputmode="decimal" placeholder="e.g., 1.96, -2.33, 0.5" />
+        <button class="calculate-btn" id="calcBtn">Calculate</button>
+      </div>
     </div>
 
-    <script>
-        // Z-table data from the provided document
-        const zTable = {
-            '-3.4': 0.0003, '-3.3': 0.0005, '-3.2': 0.0007, '-3.1': 0.001, '-3.0': 0.0013,
-            '-2.9': 0.0019, '-2.8': 0.0026, '-2.7': 0.0035, '-2.6': 0.0047, '-2.5': 0.0062,
-            '-2.4': 0.0082, '-2.3': 0.0107, '-2.2': 0.0139, '-2.1': 0.0179, '-2.0': 0.0228,
-            '-1.9': 0.0287, '-1.8': 0.0359, '-1.7': 0.0446, '-1.6': 0.0548, '-1.5': 0.0668,
-            '-1.4': 0.0808, '-1.3': 0.0968, '-1.2': 0.1151, '-1.1': 0.1357, '-1.0': 0.1587,
-            '-0.9': 0.1841, '-0.8': 0.2119, '-0.7': 0.2420, '-0.6': 0.2743, '-0.5': 0.3085,
-            '-0.4': 0.3446, '-0.3': 0.3821, '-0.2': 0.4207, '-0.1': 0.4602, '0.0': 0.5000,
-            '0.1': 0.5398, '0.2': 0.5793, '0.3': 0.6179, '0.4': 0.6554, '0.5': 0.6915,
-            '0.6': 0.7257, '0.7': 0.7580, '0.8': 0.7881, '0.9': 0.8159, '1.0': 0.8413,
-            '1.1': 0.8643, '1.2': 0.8849, '1.3': 0.9032, '1.4': 0.9192, '1.5': 0.9332,
-            '1.6': 0.9452, '1.7': 0.9554, '1.8': 0.9641, '1.9': 0.9713, '2.0': 0.9772,
-            '2.1': 0.9821, '2.2': 0.9861, '2.3': 0.9893, '2.4': 0.9918, '2.5': 0.9938,
-            '2.6': 0.9953, '2.7': 0.9965, '2.8': 0.9974, '2.9': 0.9981, '3.0': 0.9987,
-            '3.1': 0.9990, '3.2': 0.9993, '3.3': 0.9995, '3.4': 0.9997
-        };
+    <!-- Mini bell-curve with left-of-z shading -->
+    <div class="curve-wrap">
+      <div class="curve-title">Standard Normal Curve — shaded area is P(Z ≤ z)</div>
+      <canvas id="curve" width="560" height="160" aria-hidden="true"></canvas>
+    </div>
 
-        function roundToNearestTenth(num) {
-            return Math.round(num * 10) / 10;
-        }
+    <div id="result" class="result" aria-live="polite"></div>
 
-        function interpolate(z1, p1, z2, p2, target) {
-            const ratio = (target - z1) / (z2 - z1);
-            return p1 + ratio * (p2 - p1);
-        }
+    <div class="range-info">
+      <strong>Valid Range:</strong> Z-scores from -3.4 to 3.4<br />
+      Values outside this range will be approximated
+    </div>
+  </div>
 
-        function findProbability(zScore) {
-            const rounded = roundToNearestTenth(zScore);
-            const key = rounded.toFixed(1);
-            
-            // Direct lookup if exact match
-            if (zTable[key] !== undefined) {
-                return zTable[key];
-            }
-            
-            // Handle extreme values
-            if (zScore <= -3.4) return 0.0003;
-            if (zScore >= 3.4) return 0.9997;
-            
-            // Interpolation for values between table entries
-            const lowerZ = Math.floor(zScore * 10) / 10;
-            const upperZ = lowerZ + 0.1;
-            
-            const lowerKey = lowerZ.toFixed(1);
-            const upperKey = upperZ.toFixed(1);
-            
-            if (zTable[lowerKey] !== undefined && zTable[upperKey] !== undefined) {
-                return interpolate(lowerZ, zTable[lowerKey], upperZ, zTable[upperKey], zScore);
-            }
-            
-            return null;
-        }
+  <script>
+    // Z-table data from the provided document (0.00 column only)
+    const zTable = {
+      '-3.4': 0.0003, '-3.3': 0.0005, '-3.2': 0.0007, '-3.1': 0.001, '-3.0': 0.0013,
+      '-2.9': 0.0019, '-2.8': 0.0026, '-2.7': 0.0035, '-2.6': 0.0047, '-2.5': 0.0062,
+      '-2.4': 0.0082, '-2.3': 0.0107, '-2.2': 0.0139, '-2.1': 0.0179, '-2.0': 0.0228,
+      '-1.9': 0.0287, '-1.8': 0.0359, '-1.7': 0.0446, '-1.6': 0.0548, '-1.5': 0.0668,
+      '-1.4': 0.0808, '-1.3': 0.0968, '-1.2': 0.1151, '-1.1': 0.1357, '-1.0': 0.1587,
+      '-0.9': 0.1841, '-0.8': 0.2119, '-0.7': 0.2420, '-0.6': 0.2743, '-0.5': 0.3085,
+      '-0.4': 0.3446, '-0.3': 0.3821, '-0.2': 0.4207, '-0.1': 0.4602, '0.0': 0.5000,
+      '0.1': 0.5398, '0.2': 0.5793, '0.3': 0.6179, '0.4': 0.6554, '0.5': 0.6915,
+      '0.6': 0.7257, '0.7': 0.7580, '0.8': 0.7881, '0.9': 0.8159, '1.0': 0.8413,
+      '1.1': 0.8643, '1.2': 0.8849, '1.3': 0.9032, '1.4': 0.9192, '1.5': 0.9332,
+      '1.6': 0.9452, '1.7': 0.9554, '1.8': 0.9641, '1.9': 0.9713, '2.0': 0.9772,
+      '2.1': 0.9821, '2.2': 0.9861, '2.3': 0.9893, '2.4': 0.9918, '2.5': 0.9938,
+      '2.6': 0.9953, '2.7': 0.9965, '2.8': 0.9974, '2.9': 0.9981, '3.0': 0.9987,
+      '3.1': 0.9990, '3.2': 0.9993, '3.3': 0.9995, '3.4': 0.9997
+    };
 
-        function calculateProbability() {
-            const input = document.getElementById('zscore');
-            const resultDiv = document.getElementById('result');
-            const zScore = parseFloat(input.value);
-            
-            // Add pulse animation to button
-            document.querySelector('.calculate-btn').classList.add('pulse');
-            setTimeout(() => {
-                document.querySelector('.calculate-btn').classList.remove('pulse');
-            }, 600);
-            
-            if (isNaN(zScore)) {
-                resultDiv.className = 'result error show';
-                resultDiv.innerHTML = `
-                    <div class="probability-value">⚠️</div>
-                    <div>Please enter a valid number</div>
-                `;
-                return;
-            }
-            
-            const probability = findProbability(zScore);
-            
-            if (probability === null) {
-                resultDiv.className = 'result error show';
-                resultDiv.innerHTML = `
-                    <div class="probability-value">❌</div>
-                    <div>Unable to calculate probability for this Z-score</div>
-                `;
-                return;
-            }
-            
-            const percentage = (probability * 100).toFixed(2);
-            const complementPercentage = ((1 - probability) * 100).toFixed(2);
-            
-            resultDiv.className = 'result show';
-            resultDiv.innerHTML = `
-                <div class="probability-value">P(Z ≤ ${zScore}) = ${probability.toFixed(4)}</div>
-                <div class="explanation">
-                    This means ${percentage}% of the area under the standard normal curve lies to the left of Z = ${zScore}
-                </div>
-                <div class="explanation" style="margin-top: 10px;">
-                    <strong>Area to the right:</strong> ${complementPercentage}%
-                </div>
-            `;
-        }
+    function roundToNearestTenth(num) { return Math.round(num * 10) / 10; }
+    function interpolate(z1, p1, z2, p2, target) {
+      const ratio = (target - z1) / (z2 - z1);
+      return p1 + ratio * (p2 - p1);
+    }
 
-        // Allow Enter key to calculate
-        document.getElementById('zscore').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                calculateProbability();
-            }
-        });
+    function findProbability(zScore) {
+      const rounded = roundToNearestTenth(zScore);
+      const key = rounded.toFixed(1);
 
-        // Auto-focus input on load
-        window.addEventListener('load', function() {
-            document.getElementById('zscore').focus();
-        });
-    </script>
+      if (zTable[key] !== undefined) return zTable[key]; // direct match
+      if (zScore <= -3.4) return 0.0003;
+      if (zScore >= 3.4) return 0.9997;
+
+      const lowerZ = Math.floor(zScore * 10) / 10;
+      const upperZ = lowerZ + 0.1;
+      const lowerKey = lowerZ.toFixed(1);
+      const upperKey = upperZ.toFixed(1);
+
+      if (zTable[lowerKey] !== undefined && zTable[upperKey] !== undefined) {
+        return interpolate(lowerZ, zTable[lowerKey], upperZ, zTable[upperKey], zScore);
+      }
+      return null;
+    }
+
+    // ---- Mini bell-curve drawing (shade left of z) ----
+    const canvas = document.getElementById('curve');
+    const ctx = canvas.getContext('2d');
+
+    function pdf(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); }
+    // map x in [-4,4] to canvas X pixels
+    function xToPx(x) { const W = canvas.width; return (x + 4) / 8 * W; }
+    function yToPx(y) {
+      const H = canvas.height;
+      const baseline = H - 22;          // baseline near bottom
+      const scale = H * 2.8;            // vertical scale factor
+      return baseline - y * scale;
+    }
+
+    function drawCurve(z) {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // axis baseline
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(10, H - 22);
+      ctx.lineTo(W - 10, H - 22);
+      ctx.stroke();
+
+      // normal curve path
+      ctx.beginPath();
+      for (let i = 0; i <= W; i++) {
+        const x = (i / W) * 8 - 4; // -4..4
+        const y = pdf(x);
+        const yPx = yToPx(y);
+        if (i === 0) ctx.moveTo(i, yPx); else ctx.lineTo(i, yPx);
+      }
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Shade area left of z
+      const zx = xToPx(Math.max(-4, Math.min(4, z)));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, Math.max(0, Math.min(W, zx)), H);
+      ctx.clip();
+
+      ctx.beginPath();
+      for (let i = 0; i <= W; i++) {
+        const x = (i / W) * 8 - 4;
+        const y = pdf(x);
+        const yPx = yToPx(y);
+        if (i === 0) ctx.moveTo(i, yPx); else ctx.lineTo(i, yPx);
+      }
+      ctx.lineTo(0, H - 22);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(102,126,234,0.22)'; // soft blue, matches theme
+      ctx.fill();
+      ctx.restore();
+
+      // z marker line
+      ctx.beginPath();
+      ctx.moveTo(zx, H - 22);
+      ctx.lineTo(zx, yToPx(pdf(Math.max(-4, Math.min(4, z)))));
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function resizeCanvas() {
+      // Make canvas crisp on high-DPI and responsive
+      const cssWidth = canvas.clientWidth;
+      const cssHeight = canvas.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(cssWidth * dpr);
+      canvas.height = Math.round(cssHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale drawing to CSS pixels
+      // Redraw using current z
+      const zVal = parseFloat(document.getElementById('zscore').value.replace(',', '.'));
+      drawCurve(isFinite(zVal) ? zVal : 0);
+    }
+
+    // ---- UI logic ----
+    const resultDiv = document.getElementById('result');
+    const input = document.getElementById('zscore');
+    const button = document.getElementById('calcBtn');
+
+    function calculateProbability() {
+      // pulse animation
+      button.classList.add('pulse');
+      setTimeout(() => button.classList.remove('pulse'), 600);
+
+      const raw = input.value.replace(',', '.');
+      const zScore = parseFloat(raw);
+
+      if (isNaN(zScore)) {
+        resultDiv.className = 'result error show';
+        resultDiv.innerHTML = `
+          <div class="probability-value">⚠️</div>
+          <div>Please enter a valid number</div>
+        `;
+        drawCurve(0);
+        return;
+      }
+
+      const probability = findProbability(zScore);
+      if (probability === null) {
+        resultDiv.className = 'result error show';
+        resultDiv.innerHTML = `
+          <div class="probability-value">❌</div>
+          <div>Unable to calculate probability for this Z-score</div>
+        `;
+        drawCurve(0);
+        return;
+      }
+
+      const percentage = (probability * 100).toFixed(2);
+      const complementPercentage = ((1 - probability) * 100).toFixed(2);
+
+      resultDiv.className = 'result show';
+      resultDiv.innerHTML = `
+        <div class="probability-value">P(Z ≤ ${zScore}) = ${probability.toFixed(4)}</div>
+        <div class="explanation">
+          This means ${percentage}% of the area under the standard normal curve lies to the left of Z = ${zScore}.
+        </div>
+        <div class="explanation" style="margin-top: 10px;">
+          <strong>Area to the right:</strong> ${complementPercentage}%
+        </div>
+      `;
+
+      drawCurve(zScore);
+    }
+
+    // Recalculate & redraw on Enter
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') calculateProbability(); });
+
+    // Live redraw of shading while typing (without changing result text)
+    input.addEventListener('input', () => {
+      const val = parseFloat(input.value.replace(',', '.'));
+      drawCurve(isFinite(val) ? val : 0);
+    });
+
+    button.addEventListener('click', calculateProbability);
+
+    // Auto-focus and initial draw
+    window.addEventListener('load', () => {
+      input.focus();
+      resizeCanvas();
+      drawCurve(0);
+    });
+
+    // Handle responsive canvas
+    window.addEventListener('resize', resizeCanvas);
+  </script>
 </body>
 </html>
